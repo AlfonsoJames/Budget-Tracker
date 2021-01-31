@@ -44,24 +44,17 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     if (event.request.url.includes("/api")) {
-        event.respondWith(
-            caches.match(event.request).then((cachedResponse) => {
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-
-                return caches.open(RUNTIME).then((cache) => {
-                    return fetch(event.request).then((response) => {
-                        return cache.put(event.request, response.clone()).then(() => {
-                            return response;
-                        });
-                    });
-                });
+        caches.open(RUNTIME).then(cache => {
+            return fetch(event.request).then(response => {
+                cache.put(event.request.url, response.clone());
+                return response;
             })
-        );
+                .catch(() => caches.match(event.request));
+        });
+
+        return;
     }
 });
-
 //   ];
 
 //   const CACHE_NAME = "static-cache-v2";
