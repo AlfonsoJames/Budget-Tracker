@@ -6,7 +6,6 @@ fetch("/api/transaction")
     return response.json();
   })
   .then(data => {
-    // save db data on global variable
     transactions = data;
 
     populateTotal();
@@ -15,7 +14,6 @@ fetch("/api/transaction")
   });
 
 function populateTotal() {
-  // reduce transaction amounts to a single total value
   let total = transactions.reduce((total, t) => {
     return total + parseInt(t.value);
   }, 0);
@@ -29,7 +27,6 @@ function populateTable() {
   tbody.innerHTML = "";
 
   transactions.forEach(transaction => {
-    // create and populate a table row
     let tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${transaction.name}</td>
@@ -41,23 +38,19 @@ function populateTable() {
 }
 
 function populateChart() {
-  // copy array and reverse it
   let reversed = transactions.slice().reverse();
   let sum = 0;
 
-  // create date labels for chart
   let labels = reversed.map(t => {
     let date = new Date(t.date);
     return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
   });
 
-  // create incremental values for chart
   let data = reversed.map(t => {
     sum += parseInt(t.value);
     return sum;
   });
 
-  // remove old chart if it exists
   if (myChart) {
     myChart.destroy();
   }
@@ -83,7 +76,6 @@ function sendTransaction(isAdding) {
   let amountEl = document.querySelector("#t-amount");
   let errorEl = document.querySelector(".form .error");
 
-  // validate form
   if (nameEl.value === "" || amountEl.value === "") {
     errorEl.textContent = "Missing Information";
     return;
@@ -92,27 +84,20 @@ function sendTransaction(isAdding) {
     errorEl.textContent = "";
   }
 
-  // create record
   let transaction = {
     name: nameEl.value,
     value: amountEl.value,
     date: new Date().toISOString()
   };
 
-  // if subtracting funds, convert amount to negative number
   if (!isAdding) {
     transaction.value *= -1;
   }
-
-  // add to beginning of current array of data
   transactions.unshift(transaction);
-
-  // re-run logic to populate ui with new record
   populateChart();
   populateTable();
   populateTotal();
   
-  // also send to server
   fetch("/api/transaction", {
     method: "POST",
     body: JSON.stringify(transaction),
@@ -129,18 +114,13 @@ function sendTransaction(isAdding) {
       errorEl.textContent = "Missing Information";
     }
     else {
-      // clear form
       nameEl.value = "";
       amountEl.value = "";
     }
   })
   .catch(err => {
-    // fetch failed, so save in indexed db
     console.log(transaction);
     saveRecord(transaction);
-    console.log("Braked")
-
-    // clear form
     nameEl.value = "";
     amountEl.value = "";
   });
@@ -153,3 +133,56 @@ document.querySelector("#add-btn").onclick = function() {
 document.querySelector("#sub-btn").onclick = function() {
   sendTransaction(false);
 };
+
+let db;
+const request = indexedDB.open("budget", 1);
+
+request.onupgradeneeded = function (event) {
+    const db = event.target.result;
+    db.createObjectStore("pending", { autoIncrement: true });
+};
+
+request.onsuccess = function (event) {
+    db = event.target.result;
+
+    if (navigator.onLine) {
+        refDB();
+    };
+};
+
+request.onerror = function (event) {
+    console.log(event.target.errorCode);
+};
+
+function saveRecord(data) {
+
+    const transaction = db.transaction(["pending"], "readwrite")
+    const store = transaction.objectStore("pending");
+    store.add(data);
+};
+
+function refDB() {
+    const transaction = db.transaction(["pending"], "readwrite");
+    const store = transaction.objectStore("pending");
+    const getAll = store.getAll();
+
+    getAll.onsuccess = function () {
+        if (getAll.result.length > 0) {
+            fetch("/api/transaction/bulk", {
+                method: "POST",
+                body: JSON.stringify(getAll.result),
+                headers: {
+                    Accept: "application/json, text/plain, */*",
+                    "Content-Type": "application/json"
+                },
+            }).then(response => response.json())
+                .then(() => {
+                    const transaction = db.transaction(["pending"], "readwrite");
+                    const store = transaction.objectStore("pending");
+                    store.clear();
+                });
+        };
+    };
+};
+
+window.addEventListener("online", refDB);

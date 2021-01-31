@@ -3,6 +3,7 @@ const FILES_TO_CACHE = [
     "/index.html",
     "styles.css",
     "/index.js",
+    // "/indexedDB.js",
     "/manifest.webmanifest",
     "/icons/icon-192x192.png",
     "/icons/icon-512x512.png",
@@ -10,12 +11,12 @@ const FILES_TO_CACHE = [
     'https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css',
 ];
 
-const PRECACHE = 'precache-v1';
-const RUNTIME = 'runtime';
+const CACHE_NAME = "static-cache-v2";
+const DATA_CACHE_NAME = "data-cache-v1";
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(PRECACHE)
+        caches.open(CACHE_NAME)
             .then((cache) => {
                 console.log("Your files were pre-cached successfully!");
                 return cache.addAll(FILES_TO_CACHE);
@@ -26,7 +27,7 @@ self.addEventListener('install', (event) => {
 
 // The activate handler takes care of cleaning up old caches.
 self.addEventListener('activate', (event) => {
-    const currentCaches = [PRECACHE, RUNTIME];
+    const currentCaches = [CACHE_NAME, DATA_CACHE_NAME];
     event.waitUntil(
         caches
             .keys()
@@ -46,7 +47,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     if (event.request.url.includes("/api")) {
-        caches.open(RUNTIME).then(cache => {
+        caches.open(DATA_CACHE_NAME).then(cache => {
             return fetch(event.request).then(response => {
                 cache.put(event.request.url, response.clone());
                 return response;
@@ -63,8 +64,8 @@ self.addEventListener('fetch', (event) => {
     //   const DATA_CACHE_NAME = "data-cache-v1";
 
     //   // install
-    //   self.addEventListener("install", function(evt) {
-    //     evt.waitUntil(
+    //   self.addEventListener("install", function(event) {
+    //     event.waitUntil(
     //       caches.open(CACHE_NAME).then(cache => {
     //         console.log("Your files were pre-cached successfully!");
     //         return cache.addAll(FILES_TO_CACHE);
@@ -74,8 +75,8 @@ self.addEventListener('fetch', (event) => {
     //     self.skipWaiting();
     //   });
 
-    //   self.addEventListener("activate", function(evt) {
-    //     evt.waitUntil(
+    //   self.addEventListener("activate", function(event) {
+    //     event.waitUntil(
     //       caches.keys().then(keyList => {
     //         return Promise.all(
     //           keyList.map(key => {
@@ -92,23 +93,23 @@ self.addEventListener('fetch', (event) => {
     //   });
 
     //   // fetch
-    //   self.addEventListener("fetch", function(evt) {
+    //   self.addEventListener("fetch", function(event) {
     // cache successful requests to the API
-    // if (evt.request.url.includes("/api/")) {
-    //   evt.respondWith(
+    // if (event.request.url.includes("/api/")) {
+    //   event.respondWith(
     //     caches.open(DATA_CACHE_NAME).then(cache => {
-    //       return fetch(evt.request)
+    //       return fetch(event.request)
     //         .then(response => {
     //               // If the response was good, clone it and store it in the cache.
     //   if (response.status === 200) {
-    //     cache.put(evt.request.url, response.clone());
+    //     cache.put(event.request.url, response.clone());
     //   }
 
     //   return response;
     // })
     // .catch(err => {
     //               // Network request failed, try to get it from the cache.
-    //           return cache.match(evt.request);
+    //           return cache.match(event.request);
     //         });
     //     }).catch(err => console.log(err))
     //   );
@@ -118,9 +119,9 @@ self.addEventListener('fetch', (event) => {
 
     //     // if the request is not for the API, serve static assets using "offline-first" approach.
     //     // see https://developers.google.com/web/fundamentals/instant-and-offline/offline-cookbook#cache-falling-back-to-network
-    evt.respondWith(
-        caches.match(evt.request).then(function (response) {
-            return response || fetch(evt.request);
+    event.respondWith(
+        caches.match(event.request).then(function (response) {
+            return response || fetch(event.request);
         })
     )
         ;

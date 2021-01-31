@@ -27,10 +27,6 @@ mongoose.connect(
   }
 );
 
-// mongoose.connect("mongodb://localhost/budget", {
-//   useNewUrlParser: true,
-//   useFindAndModify: false
-// });
 
 // routes
 app.use(require("./routes/api.js"));
