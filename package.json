@@ -16,8 +16,7 @@
     "express": "^4.17.1",
     "heroku": "^7.47.11",
     "mongoose": "^5.11.14",
-    "morgan": "^1.10.0",
-    
+    "morgan": "^1.10.0"  
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
