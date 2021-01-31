@@ -3,7 +3,7 @@
 
 ## Description
 
-    This is transaction tracker that can be use online  or offline.
+    This Progressive Web Application is a transaction tracker that can be used both online and offline.
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
@@ -30,7 +30,7 @@ npm i
 
 
 `
-
+It easy... even a caveman can use it.
 `
 
 ## License
